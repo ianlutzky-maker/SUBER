@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f6f0">
+<meta name="description" content="Diez recorridos de Buenos Aires. ¿Cuántos bondis reconocés?">
+<title>¿Qué bondi es? · SubeR</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="data.js"></script>
+<script defer src="premio.js"></script>
+<script defer src="game.js"></script>
+</head>
+<body>
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<symbol id="bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="16" rx="3"/><path d="M4 13h16M8 19v2m8-2v2M8 16h.01M16 16h.01M12 4v9"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+<symbol id="focus" viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/><circle cx="12" cy="12" r="2"/></symbol>
+</svg>
+<header class="top wrap">
+  <div class="brand"><span class="brand-icon"><svg><use href="#bus"/></svg></span>Sube<span>R</span></div>
+  <span class="top-label">EL JUEGO DEL BONDI</span>
+</header>
+<main class="wrap">
+<section id="home" class="hero">
+  <div class="intro">
+    <p class="eyebrow"><span></span> DESAFÍO PORTEÑO</p>
+    <h1>¿Qué <em>bondi</em> es?</h1>
+    <p class="lede">Reconocé 10 recorridos de CABA y ganate un súper descuento.</p>
+    <button id="start" class="primary">Jugar <svg aria-hidden="true"><use href="#arrow"/></svg></button>
+    <div class="facts"><span>01 / 10 RECORRIDOS</span><span>02 / 4 OPCIONES</span></div>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <div class="hero-grid"></div>
+    <span class="art-index">FIG. 01 <b>✳</b></span>
+    <svg class="art-route" viewBox="0 0 500 390" fill="none">
+      <path d="M-22 350H122Q140 350 140 332V265Q140 250 157 250H233Q250 250 250 234V166Q250 149 267 149H357Q373 149 373 132V79Q373 62 390 62H520" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+      <path d="M-22 350H122Q140 350 140 332V265Q140 250 157 250H233Q250 250 250 234V166Q250 149 267 149H357Q373 149 373 132V79Q373 62 390 62H520" stroke="#2446ed" stroke-width="12" stroke-linecap="round"/>
+      <circle cx="140" cy="293" r="11" fill="#fff" stroke="#2446ed" stroke-width="5"/><circle cx="373" cy="106" r="11" fill="#fff" stroke="#2446ed" stroke-width="5"/>
+    </svg>
+    <div class="ticket"><span class="ticket-icon"><svg><use href="#bus"/></svg></span><div>BOLETO DE JUEGO<small>BUENOS AIRES · ARG</small></div><b>01</b></div>
+  </div>
+</section>
+<section id="game" class="game" hidden>
+  <div class="game-top"><p class="eyebrow"><span></span> <span id="round"></span></p><span id="score" class="score"></span></div>
+  <div id="progress" class="progress" aria-hidden="true"></div>
+  <h1 id="question" tabindex="-1">¿Qué bondi hace este recorrido?</h1>
+  <div class="map-panel">
+    <canvas id="map" tabindex="0" aria-label="Mapa de CABA sin etiquetas. Usá las flechas para moverlo y más o menos para acercarlo."></canvas>
+    <div class="map-chip"><span></span><span id="map-status">Dibujando recorrido</span></div>
+    <div class="controls">
+      <button id="zoom-in" aria-label="Acercar">+</button><button id="zoom-out" aria-label="Alejar">−</button>
+      <button id="recenter" aria-label="Encuadrar recorrido"><svg aria-hidden="true"><use href="#focus"/></svg></button>
+    </div>
+  </div>
+  <div id="options" class="options" aria-label="Opciones de línea"></div>
+  <div class="feedback"><p id="status" role="status"></p><button id="next" class="primary" disabled>Siguiente recorrido <svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
+</section>
+<section id="result" class="result" hidden>
+  <p class="eyebrow"><span></span> FIN DEL RECORRIDO</p>
+  <div class="result-icon" id="result-icon" aria-hidden="true"></div>
+  <h1 id="result-title" tabindex="-1"></h1>
+  <div id="reward" hidden>
+    <p class="prize">Te ganaste un súper descuento. De súper.</p>
+    <div id="coupon" hidden><code id="code"></code><button id="copy">Copiar código</button></div>
+    <p id="reward-details"></p><p id="copy-status" role="status"></p>
+  </div>
+  <button id="restart" class="primary">Volver a jugar <svg aria-hidden="true"><use href="#arrow"/></svg></button>
+</section>
+</main>
+<footer class="wrap footer"><span>SubeR <b>×</b> Buenos Aires</span><span>Cartografía © <a href="https://data.buenosaires.gob.ar/es/dataset/calles">Buenos Aires Data</a></span></footer>
+</body>
+</html>
