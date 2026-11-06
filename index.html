@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f6f0">
-<meta name="description" content="Diez recorridos de Buenos Aires. ¿Cuántos bondis reconocés?">
+<meta name="description" content="Diez recorridos de colectivos, trenes y subtes de Buenos Aires.">
 <title>¿Qué bondi es? · SubeR</title>
 <link rel="stylesheet" href="style.css">
 <script defer src="data.js"></script>
@@ -28,7 +28,7 @@
     <h1>¿Qué <em>bondi</em> es?</h1>
     <p class="lede">Reconocé 10 recorridos de CABA y ganate un súper descuento.</p>
     <button id="start" class="primary">Jugar <svg aria-hidden="true"><use href="#arrow"/></svg></button>
-    <div class="facts"><span>01 / 10 RECORRIDOS</span><span>02 / 4 OPCIONES</span></div>
+    <div class="facts"><span>10 RECORRIDOS</span><span>BONDI · TREN · SUBTE</span></div>
   </div>
   <div class="hero-art" aria-hidden="true">
     <div class="hero-grid"></div>
@@ -42,11 +42,11 @@
   </div>
 </section>
 <section id="game" class="game" hidden>
-  <div class="game-top"><p class="eyebrow"><span></span> <span id="round"></span></p><span id="score" class="score"></span></div>
+  <div class="game-top"><p class="eyebrow"><span></span> <span id="round"></span></p><div class="game-meta"><span id="score" class="score"></span><button id="music-toggle" type="button" aria-pressed="true">Música</button></div></div>
   <div id="progress" class="progress" aria-hidden="true"></div>
-  <h1 id="question" tabindex="-1">¿Qué bondi hace este recorrido?</h1>
+  <h1 id="question" tabindex="-1">¿Qué línea hace este recorrido?</h1>
   <div class="map-panel">
-    <canvas id="map" tabindex="0" aria-label="Mapa de CABA sin etiquetas. Usá las flechas para moverlo y más o menos para acercarlo."></canvas>
+    <canvas id="map" tabindex="0" aria-label="Mapa del recorrido sin etiquetas. Usá las flechas para moverlo y más o menos para acercarlo."></canvas>
     <div class="map-chip"><span></span><span id="map-status">Dibujando recorrido</span></div>
     <div class="controls">
       <button id="zoom-in" aria-label="Acercar">+</button><button id="zoom-out" aria-label="Alejar">−</button>
@@ -68,6 +68,7 @@
   <button id="restart" class="primary">Volver a jugar <svg aria-hidden="true"><use href="#arrow"/></svg></button>
 </section>
 </main>
-<footer class="wrap footer"><span>SubeR <b>×</b> Buenos Aires</span><span>Cartografía © <a href="https://data.buenosaires.gob.ar/es/dataset/calles">Buenos Aires Data</a></span></footer>
+<audio id="soundtrack" src="audio/partida.mp3" preload="metadata" loop></audio>
+<footer class="wrap footer"><span>SubeR <b>×</b> Buenos Aires</span><span>Mapa: <a href="https://data.buenosaires.gob.ar/es/dataset/calles">Buenos Aires Data</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a></span></footer>
 </body>
 </html>

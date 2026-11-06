@@ -1,9 +1,16 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const { routes, streets, avenues, boundary } = window.suberData;
+const { routes, streets, avenues, boundary, coastMap } = window.suberData;
 const prize = window.premioSubeR;
-const rounds = 10;
+const roundMix = { colectivo: 6, tren: 2, subte: 2 };
+const rounds = Object.values(roundMix).reduce((total, count) => total + count, 0);
+const catalog = Object.fromEntries(Object.keys(roundMix).map((mode) => [
+  mode, routes.filter((entry) => entry.modo === mode)
+]));
+const soundtrack = $("soundtrack");
+let musicEnabled = true;
+soundtrack.volume = 0.5;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const canvas = $("map");
 const context = canvas.getContext("2d");
@@ -21,14 +28,30 @@ function shuffle(values) {
   return result;
 }
 
+function updateMusic() {
+  $("music-toggle").setAttribute("aria-pressed", String(musicEnabled));
+  $("music-toggle").textContent = musicEnabled ? "♫ Música" : "♫ Silenciada";
+}
+
+function playMusic() {
+  if (!musicEnabled) return;
+  soundtrack.play().catch((error) => {
+    if (error.name === "AbortError" || $("game").hidden || !musicEnabled) return;
+    musicEnabled = false;
+    updateMusic();
+  });
+}
+
 function start() {
-  deck = shuffle(routes).slice(0, rounds);
+  deck = shuffle(Object.entries(roundMix).flatMap(([mode, count]) => shuffle(catalog[mode]).slice(0, count)));
   positions = shuffle([0, 1, 2, 3, 0, 1, 2, 3, ...shuffle([0, 1, 2, 3]).slice(0, 2)]);
   index = 0;
   answers = [];
   $("home").hidden = true;
   $("result").hidden = true;
   $("game").hidden = false;
+  updateMusic();
+  playMusic();
   showRound();
 }
 
@@ -52,13 +75,15 @@ function showRound() {
   $("map-status").textContent = "Dibujando recorrido";
   $("next").firstChild.textContent = index === rounds - 1 ? "Ver resultado " : "Siguiente recorrido ";
   $("next").disabled = true;
-  const choices = shuffle(routes.filter((entry) => entry.linea !== route.linea)).slice(0, 3);
+  const choices = shuffle(catalog[route.modo].filter((entry) => entry.linea !== route.linea)).slice(0, 3);
   choices.splice(positions[index], 0, route);
   $("options").replaceChildren(...choices.map(({ linea }) => {
     const button = document.createElement("button");
     button.className = "option";
+    if (route.modo === "tren" || linea === "Premetro") button.classList.add("named-option");
+    button.dataset.linea = String(linea);
     button.disabled = true;
-    button.setAttribute("aria-label", `Línea ${linea}`);
+    button.setAttribute("aria-label", choiceLabel(linea));
     button.textContent = linea;
     button.addEventListener("click", () => answer(linea));
     return button;
@@ -88,18 +113,24 @@ function showRound() {
   animation = requestAnimationFrame(advance);
 }
 
+function choiceLabel(linea) {
+  if (route.modo === "tren") return linea === "Tren de la Costa" ? linea : `Tren ${linea}`;
+  if (linea === "Premetro") return linea;
+  return `Línea ${linea}`;
+}
+
 function answer(linea) {
   if (phase !== "ready") return;
   phase = "answered";
   const hit = linea === route.linea;
   answers.push(hit);
   for (const button of $("options").children) {
-    const value = Number(button.textContent);
+    const value = button.dataset.linea;
     button.disabled = true;
-    if (value === route.linea) mark(button, value, "right", "✓", hit ? "Correcta" : "Era esta");
-    else if (value === linea) mark(button, value, "wrong", "×", "Tu opción");
+    if (value === String(route.linea)) mark(button, value, "right", "✓", hit ? "Correcta" : "Era esta");
+    else if (value === String(linea)) mark(button, value, "wrong", "×", "Tu opción");
   }
-  $("status").textContent = hit ? "¡Acertaste!" : `Era el ${route.linea}.`;
+  $("status").textContent = hit ? "¡Acertaste!" : `Era ${choiceLabel(route.linea)}.`;
   renderProgress();
   $("next").disabled = false;
   $("next").focus({ preventScroll: true });
@@ -107,7 +138,7 @@ function answer(linea) {
 
 function mark(button, number, style, icon, label) {
   button.classList.add(style);
-  button.setAttribute("aria-label", `Línea ${number}. ${label}`);
+  button.setAttribute("aria-label", `${choiceLabel(number)}. ${label}`);
   const badge = document.createElement("small");
   const symbol = document.createElement("b");
   symbol.textContent = icon;
@@ -125,6 +156,8 @@ function next() {
 function showResult() {
   phase = "finished";
   $("game").hidden = true;
+  soundtrack.pause();
+  soundtrack.currentTime = 0;
   const score = answers.filter(Boolean).length;
   const won = score === rounds;
   $("result").hidden = false;
@@ -142,6 +175,8 @@ function showResult() {
 const minorRoads = new Path2D(streets);
 const majorRoads = new Path2D(avenues);
 const city = new Path2D(boundary);
+const coastRoads = new Path2D(coastMap.streets);
+const coastAvenues = new Path2D(coastMap.avenues);
 
 function resize() {
   const bounds = canvas.getBoundingClientRect();
@@ -166,18 +201,19 @@ function fit() {
 
 function draw() {
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  context.fillStyle = "#f0f2f3";
+  const onCoast = route.mapa === "costa";
+  context.fillStyle = onCoast ? "#fff" : "#f0f2f3";
   context.fillRect(0, 0, width, height);
   context.translate(view.x, view.y);
   context.scale(view.scale, view.scale);
   context.fillStyle = "#ffffff";
-  context.fill(city, "evenodd");
+  if (!onCoast) context.fill(city, "evenodd");
   context.strokeStyle = "#e0e2e4";
   context.lineWidth = 0.8 / view.scale;
-  context.stroke(minorRoads);
+  context.stroke(onCoast ? coastRoads : minorRoads);
   context.strokeStyle = "#33363a";
   context.lineWidth = 0.65 / view.scale;
-  context.stroke(majorRoads);
+  context.stroke(onCoast ? coastAvenues : majorRoads);
 
   const limit = fraction * totalLength;
   let head = pathSections[0][0];
@@ -273,6 +309,12 @@ $("zoom-in").addEventListener("click", () => zoom(1.3));
 $("zoom-out").addEventListener("click", () => zoom(1 / 1.3));
 $("recenter").addEventListener("click", fit);
 new ResizeObserver(() => resize()).observe(canvas);
+$("music-toggle").addEventListener("click", () => {
+  musicEnabled = !musicEnabled;
+  updateMusic();
+  if (musicEnabled) playMusic();
+  else soundtrack.pause();
+});
 $("start").addEventListener("click", start);
 $("restart").addEventListener("click", start);
 $("next").addEventListener("click", next);
