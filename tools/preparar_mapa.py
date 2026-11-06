@@ -38,8 +38,6 @@ SUBWAY_INFO = {
     "E": ("Retiro", "Plaza de los Virreyes", (-58.374, -34.592), "#773694"),
     "H": ("Facultad de Derecho", "Hospitales", (-58.393, -34.583), "#a47700"),
 }
-ROAD_TYPES = {"motorway", "trunk", "primary", "secondary", "tertiary", "residential", "unclassified", "living_street"}
-LARGE_ROADS = {"motorway", "trunk", "primary"}
 
 
 def features(file):
@@ -52,17 +50,6 @@ def lines(geometry):
     elif hasattr(geometry, "geoms"):
         for part in geometry.geoms:
             yield from lines(part)
-
-
-def clip_in_order(line, city):
-    if city is None:
-        return [line]
-    parts = []
-    for segment in lines(line.intersection(city)):
-        start = line.project(Point(segment.coords[0]))
-        end = line.project(Point(segment.coords[-1]))
-        parts.append((min(start, end), segment if start <= end else segment.reverse()))
-    return [segment for _, segment in sorted(parts, key=lambda item: item[0])]
 
 
 def svg_path(coords):
@@ -119,22 +106,23 @@ def extract_osm(file):
         routes[relation.id] = (number, tags, ways)
         way_ids.update(ways)
 
-    track, minor, major = {}, [], []
+    track = {}
     for way in osmium.FileProcessor(file).with_locations():
-        if not isinstance(way, osmium.osm.Way):
+        if not isinstance(way, osmium.osm.Way) or way.id not in way_ids:
             continue
-        road = way.tags.get("highway")
-        if way.id not in way_ids and road not in ROAD_TYPES:
-            continue
-        if any(not n.location.valid() for n in way.nodes):
-            continue
-        coords = [(n.lon, n.lat) for n in way.nodes]
-        if way.id in way_ids:
-            track[way.id] = coords
-        if road in ROAD_TYPES and any(-58.57 < x < -58.446 and -34.52 < y < -34.398 for x, y in coords):
-            group = major if road in LARGE_ROADS else minor
-            group.append(svg_path(LineString(coords).simplify(.000019).coords))
-    return routes, track, {"streets": "".join(minor), "avenues": "".join(major)}
+        if all(node.location.valid() for node in way.nodes):
+            track[way.id] = [(node.lon, node.lat) for node in way.nodes]
+    return routes, track
+
+
+def complete_osm_route(folder, identifier):
+    data = json.loads((folder / f"full-{identifier}.json").read_text())
+    elements = data["elements"]
+    points = {e["id"]: (e["lon"], e["lat"]) for e in elements if e["type"] == "node"}
+    track = {e["id"]: [points[n] for n in e["nodes"]] for e in elements if e["type"] == "way"}
+    relation = next(e for e in elements if e["type"] == "relation" and e["id"] == identifier)
+    ways = [m["ref"] for m in relation["members"] if m["type"] == "way" and m["role"] in ("", "forward", "backward")]
+    return relation["tags"], ordered_ways(ways, track)
 
 
 def ordered_ways(ids, track):
@@ -162,14 +150,14 @@ def collect_buses(args, city, osm_routes, track):
     def consider(number, ramal, sentido, parts, priority, source, osm_color="", **extra):
         if number in CANCELLED:
             return
-        clipped = [section for line in parts for section in clip_in_order(line, city)]
-        length = sum(line.length for line in clipped)
+        parts = list(parts)
+        length = sum(line.intersection(city).length for line in parts)
         rank = (priority, length)
         if length < .00035 or (number in best and rank <= best[number][0]):
             return
         color, color_source = bus_color(number, args.colores, osm_color)
         best[number] = (rank, route(
-            "colectivo", number, str(ramal), str(sentido), clipped, color, source,
+            "colectivo", number, str(ramal), str(sentido), parts, color, source,
             fuenteColor=color_source, referenciaColor="Color tradicional ajustado para contraste" if color_source else "Trazo neutro",
             **extra,
         ))
@@ -198,14 +186,26 @@ def collect_buses(args, city, osm_routes, track):
         consider(number, name, f"{origin} → {destination}" if origin and destination else name,
                  ordered_ways(ids, track), 2, f"https://www.openstreetmap.org/relation/{identifier}",
                  tags.get("colour", ""), id=str(identifier), origen=origin, destino=destination)
-    return [best[number][1] for number in sorted(best)]
+    result = []
+    for number in sorted(best):
+        entry = best[number][1]
+        if "openstreetmap.org/relation/" in entry["fuente"]:
+            identifier = int(entry["id"])
+            if any(way not in track for way in osm_routes[identifier][2]):
+                tags, parts = complete_osm_route(args.relaciones, identifier)
+                origin, destination = tags.get("from"), tags.get("to")
+                entry = route("colectivo", number, tags.get("name", entry["ramal"]),
+                              f"{origin} → {destination}" if origin and destination else entry["sentido"],
+                              parts, entry["color"], entry["fuente"], id=entry["id"], origen=origin, destino=destination,
+                              fuenteColor=entry["fuenteColor"], referenciaColor=entry["referenciaColor"])
+        result.append(entry)
+    return result
 
 
-def collect_trains(args, city, osm_routes, track):
+def collect_trains(args):
     result = []
     for identifier, name in TRAIN_RELATIONS.items():
-        _, tags, ways = osm_routes[identifier]
-        sections = [section for line in ordered_ways(ways, track) for section in clip_in_order(line, city)]
+        tags, sections = complete_osm_route(args.relaciones, identifier)
         origin, destination = tags["from"], tags["to"]
         result.append(route(
             "tren", name, f"{origin} – {destination}", f"Hacia {destination}", sections,
@@ -226,7 +226,7 @@ def collect_trains(args, city, osm_routes, track):
     result.append(route(
         "tren", "Tren de la Costa", "Maipú – Delta", "Hacia Delta",
         [LineString([(lon, lat) for _, lon, lat in points])], "#137dab", RAIL_GTFS,
-        origen="Maipú", destino="Delta", mapa="costa",
+        origen="Maipú", destino="Delta",
     ))
     return result
 
@@ -267,7 +267,7 @@ def collect_subways(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("colectivos", "arc_caba", "arc_provincial", "arc_nacional", "arc_municipal", "calles",
-                 "perimetro", "subte", "premetro", "trenes", "osm", "colores", "salida"):
+                 "perimetro", "subte", "premetro", "trenes", "osm", "colores", "relaciones", "salida"):
         parser.add_argument(name, type=Path)
     args = parser.parse_args()
 
@@ -278,13 +278,13 @@ def main():
         group = major if feature["properties"]["tipo_c"] in {"AVENIDA", "AUTOPISTA"} else minor
         group.append(svg_path(shape(feature["geometry"]).simplify(.000015).coords))
 
-    osm_routes, track, coast_map = extract_osm(args.osm)
-    routes = collect_buses(args, city, osm_routes, track) + collect_trains(args, city, osm_routes, track) + collect_subways(args)
+    osm_routes, track = extract_osm(args.osm)
+    routes = collect_buses(args, city, osm_routes, track) + collect_trains(args) + collect_subways(args)
     keys = {(r["modo"], r["linea"]) for r in routes}
     if len(keys) != len(routes) or any(not r["geometry"]["coordinates"] for r in routes):
         raise ValueError("El catálogo tiene líneas duplicadas o sin geometría")
     print(dict(Counter(r["modo"] for r in routes)))
-    data = dict(routes=routes, streets="".join(minor), avenues="".join(major), boundary=boundary, coastMap=coast_map)
+    data = dict(routes=routes, streets="".join(minor), avenues="".join(major), boundary=boundary)
     args.salida.write_text("window.suberData = " + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n")
 
 

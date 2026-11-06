@@ -1,7 +1,7 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
-const { routes, streets, avenues, boundary, coastMap } = window.suberData;
+const { routes, streets, avenues, boundary } = window.suberData;
 const prize = window.premioSubeR;
 const roundMix = { colectivo: 6, tren: 2, subte: 2 };
 const rounds = Object.values(roundMix).reduce((total, count) => total + count, 0);
@@ -163,11 +163,13 @@ function showResult() {
   $("result").hidden = false;
   $("result-icon").textContent = `${score}/10`;
   $("result-title").textContent = won ? "¡Sos un capo de la SubeR!" : `Pegaste ${score} de 10`;
-  $("reward").hidden = !won;
-  const code = won ? prize.codigoConfirmado.trim() : "";
-  $("coupon").hidden = !code;
+  const discount = score * 10;
+  $("discount").textContent = `${discount}% OFF`;
+  $("prize-message").hidden = !won;
+  const code = (prize.codigosPorDescuento?.[discount] || (won ? prize.codigoConfirmado : "") || "").trim();
+  $("coupon").hidden = !discount || !code;
   $("code").textContent = code;
-  $("reward-details").textContent = won ? [prize.monto, prize.vigencia, prize.condiciones].filter(Boolean).join(" · ") : "";
+  $("reward-details").textContent = discount ? [prize.vigencia, prize.condiciones].filter(Boolean).join(" · ") : "";
   $("copy-status").textContent = "";
   $("result-title").focus();
 }
@@ -175,8 +177,6 @@ function showResult() {
 const minorRoads = new Path2D(streets);
 const majorRoads = new Path2D(avenues);
 const city = new Path2D(boundary);
-const coastRoads = new Path2D(coastMap.streets);
-const coastAvenues = new Path2D(coastMap.avenues);
 
 function resize() {
   const bounds = canvas.getBoundingClientRect();
@@ -194,26 +194,28 @@ function fit() {
   const xs = points.map((point) => point.x);
   const ys = points.map((point) => point.y);
   const [left, right, top, bottom] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-  const scale = Math.min((width - 96) / Math.max(1, right - left), (height - 84) / Math.max(1, bottom - top), .8);
+  const scale = Math.min((width - 120) / Math.max(1, right - left), (height - 84) / Math.max(1, bottom - top), .8);
   view = { scale, base: scale, x: width / 2 - scale * (left + right) / 2, y: height / 2 - scale * (top + bottom) / 2 };
   draw();
 }
 
 function draw() {
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const onCoast = route.mapa === "costa";
-  context.fillStyle = onCoast ? "#fff" : "#f0f2f3";
+  context.fillStyle = "#f0f2f3";
   context.fillRect(0, 0, width, height);
   context.translate(view.x, view.y);
   context.scale(view.scale, view.scale);
   context.fillStyle = "#ffffff";
-  if (!onCoast) context.fill(city, "evenodd");
+  context.fill(city, "evenodd");
+  context.save();
+  context.clip(city, "evenodd");
   context.strokeStyle = "#e0e2e4";
   context.lineWidth = 0.8 / view.scale;
-  context.stroke(onCoast ? coastRoads : minorRoads);
+  context.stroke(minorRoads);
   context.strokeStyle = "#33363a";
   context.lineWidth = 0.65 / view.scale;
-  context.stroke(onCoast ? coastAvenues : majorRoads);
+  context.stroke(majorRoads);
+  context.restore();
 
   const limit = fraction * totalLength;
   let head = pathSections[0][0];

@@ -1,6 +1,6 @@
 window.premioSubeR = {
   codigoConfirmado: "",
-  monto: "",
+  codigosPorDescuento: {},
   vigencia: "",
   condiciones: ""
 };

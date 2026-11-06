@@ -93,3 +93,5 @@ h1 em{color:var(--blue);font-style:normal}
 #music-toggle[aria-pressed="false"]{color:var(--muted);border-color:var(--line)}
 .option.named-option{font-size:clamp(15px,2.5vw,19px);line-height:1.15}
 .option.named-option small{max-width:55px}
+
+.discount{display:inline-block;margin:0 0 18px;padding:.15em .28em;border-radius:12px;background:var(--blue);color:#fff;font-size:clamp(34px,8vw,58px);font-weight:900;letter-spacing:-.06em;line-height:1.15}
