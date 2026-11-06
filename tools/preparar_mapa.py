@@ -11,6 +11,7 @@ from zipfile import ZipFile
 import osmium
 from PIL import Image
 from shapely import line_merge
+from shapely.affinity import scale
 from shapely.geometry import LineString, MultiLineString, Point, shape
 from shapely.validation import make_valid
 
@@ -264,6 +265,17 @@ def collect_subways(args):
     return result
 
 
+def focus_in_caba(entry, city):
+    geometry = shape(entry["geometry"])
+    inside = geometry.intersection(city)
+    local = scale(inside, xfact=91650, yfact=111320, origin=(0, 0)).length
+    total = scale(geometry, xfact=91650, yfact=111320, origin=(0, 0)).length
+    if local < 1000 or (local < 2500 and local / total < .12):
+        return False
+    entry["encuadreCaba"] = [round(value, 7) for value in inside.bounds]
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("colectivos", "arc_caba", "arc_provincial", "arc_nacional", "arc_municipal", "calles",
@@ -283,6 +295,7 @@ def main():
     keys = {(r["modo"], r["linea"]) for r in routes}
     if len(keys) != len(routes) or any(not r["geometry"]["coordinates"] for r in routes):
         raise ValueError("El catálogo tiene líneas duplicadas o sin geometría")
+    routes = [entry for entry in routes if focus_in_caba(entry, city)]
     print(dict(Counter(r["modo"] for r in routes)))
     data = dict(routes=routes, streets="".join(minor), avenues="".join(major), boundary=boundary)
     args.salida.write_text("window.suberData = " + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n")

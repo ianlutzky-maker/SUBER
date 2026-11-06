@@ -95,3 +95,4 @@ h1 em{color:var(--blue);font-style:normal}
 .option.named-option small{max-width:55px}
 
 .discount{display:inline-block;margin:0 0 18px;padding:.15em .28em;border-radius:12px;background:var(--blue);color:#fff;font-size:clamp(34px,8vw,58px);font-weight:900;letter-spacing:-.06em;line-height:1.15}
+.result-joke{max-width:440px;margin:0 auto 18px;font-size:clamp(18px,4vw,23px);line-height:1.35;font-weight:700}

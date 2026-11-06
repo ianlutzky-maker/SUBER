@@ -16,6 +16,7 @@
 <symbol id="bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="16" rx="3"/><path d="M4 13h16M8 19v2m8-2v2M8 16h.01M16 16h.01M12 4v9"/></symbol>
 <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
 <symbol id="focus" viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="expand" viewBox="0 0 24 24"><path d="M9 15 4 20m0 0h5m-5 0v-5M15 9l5-5m0 0h-5m5 0v5"/></symbol>
 </svg>
 <header class="top wrap">
   <div class="brand"><span class="brand-icon"><svg><use href="#bus"/></svg></span>Sube<span>R</span></div>
@@ -50,7 +51,8 @@
     <div class="map-chip"><span></span><span id="map-status">Dibujando recorrido</span></div>
     <div class="controls">
       <button id="zoom-in" aria-label="Acercar">+</button><button id="zoom-out" aria-label="Alejar">−</button>
-      <button id="recenter" aria-label="Encuadrar recorrido"><svg aria-hidden="true"><use href="#focus"/></svg></button>
+      <button id="recenter" aria-label="Centrar en CABA" title="Centrar en CABA"><svg aria-hidden="true"><use href="#focus"/></svg></button>
+      <button id="full-route" aria-label="Ver recorrido entero" title="Ver recorrido entero"><svg aria-hidden="true"><use href="#expand"/></svg></button>
     </div>
   </div>
   <div id="options" class="options" aria-label="Opciones de línea"></div>
@@ -62,6 +64,7 @@
   <h1 id="result-title" tabindex="-1"></h1>
   <div id="reward">
     <p id="discount" class="discount"></p>
+    <p id="result-joke" class="result-joke"></p>
     <p id="prize-message" class="prize" hidden>Te ganaste un súper descuento. De súper.</p>
     <div id="coupon" hidden><code id="code"></code><button id="copy">Copiar código</button></div>
     <p id="reward-details"></p><p id="copy-status" role="status"></p>

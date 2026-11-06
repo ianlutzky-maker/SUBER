@@ -8,6 +8,19 @@ const rounds = Object.values(roundMix).reduce((total, count) => total + count, 0
 const catalog = Object.fromEntries(Object.keys(roundMix).map((mode) => [
   mode, routes.filter((entry) => entry.modo === mode)
 ]));
+const resultJokes = [
+  "Ni uno. El GPS recalculó y te mandó a hacer el tutorial a pie.",
+  "Un acierto. Sabés tan poco de bondis que le levantaste la mano al tren.",
+  "Dos aciertos. La SUBE tiene más calle que vos y vive en tu billetera.",
+  "Tres. Ya podés dar indicaciones con la seguridad de alguien que se baja en la parada equivocada.",
+  "Cuatro. Ubicás el recorrido, siempre y cuando alguien te avise en qué sentido va.",
+  "Cinco. Mitad guía porteña, mitad «che, ¿este me deja cerca?».",
+  "Seis. Ya podés decir «yo te aviso dónde bajar» con cierta impunidad.",
+  "Siete. Le encontraste la vuelta a casi todo. Hasta a la vuelta, que iba por otra calle.",
+  "Ocho. Te faltaron dos, pero ya te preguntan cómo llegar antes de abrir el mapa.",
+  "Nueve. El único que se te escapó seguro pasó con el cartel de «Fuera de servicio».",
+  "Diez de diez. Si el GPS se pierde en Buenos Aires, te llama a vos."
+];
 const soundtrack = $("soundtrack");
 let musicEnabled = true;
 soundtrack.volume = 0.5;
@@ -17,7 +30,7 @@ const context = canvas.getContext("2d");
 const fingers = new Map();
 let deck, positions, index, answers, route, phase;
 let view, animation, width, height, pixelRatio, fraction;
-let pathSections, totalLength;
+let pathSections, totalLength, wholeRoute;
 
 function shuffle(values) {
   const result = [...values];
@@ -67,6 +80,7 @@ function renderProgress() {
 
 function showRound() {
   route = deck[index];
+  wholeRoute = false;
   phase = "drawing";
   fraction = 0;
   renderProgress();
@@ -165,6 +179,7 @@ function showResult() {
   $("result-title").textContent = won ? "¡Sos un capo de la SubeR!" : `Pegaste ${score} de 10`;
   const discount = score * 10;
   $("discount").textContent = `${discount}% OFF`;
+  $("result-joke").textContent = resultJokes[score];
   $("prize-message").hidden = !won;
   const code = (prize.codigosPorDescuento?.[discount] || (won ? prize.codigoConfirmado : "") || "").trim();
   $("coupon").hidden = !discount || !code;
@@ -190,10 +205,19 @@ function resize() {
 }
 
 function fit() {
-  const points = pathSections.flat();
-  const xs = points.map((point) => point.x);
-  const ys = points.map((point) => point.y);
-  const [left, right, top, bottom] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  let left, right, top, bottom;
+  if (wholeRoute) {
+    const points = pathSections.flat();
+    const xs = points.map((point) => point.x);
+    const ys = points.map((point) => point.y);
+    [left, right, top, bottom] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  } else {
+    const [west, south, east, north] = route.encuadreCaba;
+    left = (west + 58.55) * 91650;
+    right = (east + 58.55) * 91650;
+    top = (-34.51 - north) * 111320;
+    bottom = (-34.51 - south) * 111320;
+  }
   const scale = Math.min((width - 120) / Math.max(1, right - left), (height - 84) / Math.max(1, bottom - top), .8);
   view = { scale, base: scale, x: width / 2 - scale * (left + right) / 2, y: height / 2 - scale * (top + bottom) / 2 };
   draw();
@@ -309,7 +333,14 @@ canvas.addEventListener("keydown", (event) => {
 });
 $("zoom-in").addEventListener("click", () => zoom(1.3));
 $("zoom-out").addEventListener("click", () => zoom(1 / 1.3));
-$("recenter").addEventListener("click", fit);
+$("recenter").addEventListener("click", () => {
+  wholeRoute = false;
+  fit();
+});
+$("full-route").addEventListener("click", () => {
+  wholeRoute = true;
+  fit();
+});
 new ResizeObserver(() => resize()).observe(canvas);
 $("music-toggle").addEventListener("click", () => {
   musicEnabled = !musicEnabled;
