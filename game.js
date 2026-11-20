@@ -176,7 +176,7 @@ function showResult() {
   const won = score === rounds;
   $("result").hidden = false;
   $("result-icon").textContent = `${score}/10`;
-  $("result-title").textContent = won ? "¡Sos un capo de la SubeR!" : `Pegaste ${score} de 10`;
+  $("result-title").textContent = won ? "¡Te conocés todas las líneas!" : `Pegaste ${score} de 10`;
   const discount = score * 10;
   $("discount").textContent = `${discount}% OFF`;
   $("result-joke").textContent = resultJokes[score];

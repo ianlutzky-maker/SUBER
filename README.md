@@ -1,4 +1,4 @@
-# SubeR · ¿Qué bondi es?
+# Uber · ¿Qué línea es?
 
 Abrí `index.html` en un navegador. El juego funciona sin instalación, servidor ni conexión. Cada partida mezcla seis colectivos, dos trenes y dos subtes o Premetro. Se sortean diez líneas distintas y se distribuye la respuesta correcta entre las cuatro posiciones.
 

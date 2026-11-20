@@ -10,10 +10,7 @@ svg:not(.art-route){width:24px;height:24px;fill:none;stroke:currentColor;stroke-
 .wrap{width:min(1120px,calc(100% - 40px));margin-inline:auto}
 .top,.footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .top{min-height:75px;border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;font-size:29px;font-weight:900;letter-spacing:-1.6px}
-.brand>span:last-child{color:var(--blue)}
-.brand-icon{margin-right:9px;display:grid;place-items:center;width:35px;height:35px;background:var(--blue);color:white;border-radius:9px}
-.brand-icon svg{width:22px;height:22px}
+.brand{display:block;width:84px;height:30px;object-fit:cover}
 .top-label,.eyebrow,.facts,.art-index,.ticket,.map-chip,.score{font:700 11px/1.35 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.09em}
 .top-label{border:1px solid var(--line);border-radius:50px;padding:7px 10px}
 main{flex:1}
